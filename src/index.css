@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Professional Meeting Management Design System */
+/* Professional Meeting Management Design System - Facebook Blue Theme */
 
 @layer base {
   :root {
@@ -16,8 +16,8 @@
     --popover: 255 255 255;
     --popover-foreground: 15 23 42;
 
-    --primary: 30 64 175;
-    --primary-foreground: 248 250 252;
+    --primary: 24 119 242;
+    --primary-foreground: 255 255 255;
 
     --secondary: 241 245 249;
     --secondary-foreground: 51 65 85;
@@ -25,7 +25,7 @@
     --muted: 248 250 252;
     --muted-foreground: 100 116 139;
 
-    --accent: 139 92 246;
+    --accent: 66 153 225;
     --accent-foreground: 255 255 255;
 
     --destructive: 239 68 68;
@@ -39,18 +39,21 @@
 
     --border: 226 232 240;
     --input: 226 232 240;
-    --ring: 59 130 246;
+    --ring: 24 119 242;
 
     --radius: 0.5rem;
 
-    /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(262, 83%, 58%) 100%);
-    --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+    /* Facebook Blue Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(214, 89%, 52%) 0%, hsl(221, 83%, 65%) 50%, hsl(207, 90%, 77%) 100%);
+    --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(207, 73%, 57%) 0%, hsl(214, 89%, 52%) 100%);
+    --gradient-glow: linear-gradient(135deg, hsl(214, 89%, 52%) 0%, hsl(207, 90%, 77%) 100%);
     
-    /* Shadows */
-    --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --shadow-large: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    /* Enhanced Shadows with Blue Tints */
+    --shadow-soft: 0 4px 6px -1px rgba(24, 119, 242, 0.1), 0 2px 4px -1px rgba(24, 119, 242, 0.06);
+    --shadow-medium: 0 10px 15px -3px rgba(24, 119, 242, 0.15), 0 4px 6px -2px rgba(24, 119, 242, 0.1);
+    --shadow-large: 0 25px 50px -12px rgba(24, 119, 242, 0.3);
+    --shadow-glow: 0 0 20px rgba(24, 119, 242, 0.3), 0 0 40px rgba(24, 119, 242, 0.2);
   }
 
   .dark {
@@ -60,17 +63,20 @@
     --card-foreground: 248 250 252;
     --popover: 30 41 59;
     --popover-foreground: 248 250 252;
-    --primary: 59 130 246;
+    --primary: 66 153 225;
     --primary-foreground: 15 23 42;
     --secondary: 51 65 85;
     --secondary-foreground: 226 232 240;
     --muted: 51 65 85;
     --muted-foreground: 148 163 184;
-    --accent: 139 92 246;
+    --accent: 24 119 242;
     --accent-foreground: 255 255 255;
     --border: 51 65 85;
     --input: 51 65 85;
-    --ring: 59 130 246;
+    --ring: 66 153 225;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(214, 89%, 52%) 0%, hsl(221, 83%, 65%) 50%, hsl(207, 90%, 77%) 100%);
+    --shadow-glow: 0 0 20px rgba(66, 153, 225, 0.4), 0 0 40px rgba(66, 153, 225, 0.3);
   }
 }
 
@@ -94,20 +100,46 @@
     background-clip: text;
   }
 
+  .gradient-text-glow {
+    background: var(--gradient-glow);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 8px rgba(24, 119, 242, 0.3));
+    text-shadow: 0 0 20px rgba(24, 119, 242, 0.4);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px rgba(24, 119, 242, 0.5), 0 0 20px rgba(24, 119, 242, 0.3), 0 0 30px rgba(24, 119, 242, 0.2);
+  }
+
   .glass-card {
     background: var(--gradient-card);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(24, 119, 242, 0.15);
+  }
+
+  .glass-card-glow {
+    background: var(--gradient-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(24, 119, 242, 0.2);
+    box-shadow: var(--shadow-glow);
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200;
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300;
+    box-shadow: var(--shadow-medium);
+  }
+
+  .btn-primary:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-1px);
   }
 
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-all duration-200;
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-all duration-300;
   }
 
   .card-shadow {
@@ -115,11 +147,34 @@
   }
 
   .card-hover {
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
   }
 
   .card-hover:hover {
-    box-shadow: var(--shadow-medium);
-    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-3px);
+  }
+
+  .interactive-glow {
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .interactive-glow:hover {
+    text-shadow: 0 0 15px rgba(24, 119, 242, 0.6), 0 0 25px rgba(24, 119, 242, 0.4);
+    transform: scale(1.02);
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-glow {
+    from {
+      text-shadow: 0 0 5px rgba(24, 119, 242, 0.3), 0 0 10px rgba(24, 119, 242, 0.2);
+    }
+    to {
+      text-shadow: 0 0 15px rgba(24, 119, 242, 0.6), 0 0 25px rgba(24, 119, 242, 0.4), 0 0 35px rgba(24, 119, 242, 0.3);
+    }
   }
 }
