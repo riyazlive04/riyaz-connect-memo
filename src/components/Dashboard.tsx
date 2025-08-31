@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +41,7 @@ interface Task {
 
 // Database row types (what actually comes from Supabase)
 interface MeetingRow {
-  meeting_id: number
+  meeting_id: string
   created_at: string
   meeting_date: string
   mom: any
@@ -50,7 +49,7 @@ interface MeetingRow {
 }
 
 interface TaskRow {
-  task_id: number
+  task_id: string
   created_at: string
   updated_at: string
   status: string
@@ -58,7 +57,7 @@ interface TaskRow {
   dependencies: string
   task: string
   owner: string
-  meeting_id: number
+  meeting_id: string
   due_date: string
 }
 
@@ -131,7 +130,7 @@ const Dashboard = () => {
       
       // Transform meetings data to match interface
       const transformedMeetings: Meeting[] = meetingsData.map(meeting => ({
-        id: meeting.meeting_id?.toString() || '',
+        id: meeting.meeting_id || '',
         title: meeting.title || '',
         date: meeting.meeting_date || '',
         duration: '30 min', // default since not in DB
@@ -146,8 +145,8 @@ const Dashboard = () => {
 
       // Transform tasks data to match interface
       const transformedTasks: Task[] = tasksData.map(task => ({
-        id: task.task_id?.toString() || '',
-        meeting_id: task.meeting_id?.toString() || '',
+        id: task.task_id || '',
+        meeting_id: task.meeting_id || '',
         employee_id: undefined, // not in current DB
         title: task.task || '',
         description: task.dependencies || '', // use dependencies as description for now

@@ -18,21 +18,21 @@ export type Database = {
         Row: {
           created_at: string | null
           meeting_date: string
-          meeting_id: number
+          meeting_id: string
           mom: Json | null
           title: string
         }
         Insert: {
           created_at?: string | null
           meeting_date?: string
-          meeting_id?: number
+          meeting_id?: string
           mom?: Json | null
           title: string
         }
         Update: {
           created_at?: string | null
           meeting_date?: string
-          meeting_id?: number
+          meeting_id?: string
           mom?: Json | null
           title?: string
         }
@@ -43,36 +43,36 @@ export type Database = {
           created_at: string | null
           dependencies: string | null
           due_date: string | null
-          meeting_id: number | null
+          meeting_id: string | null
           owner: string | null
           priority: string | null
           status: string | null
           task: string
-          task_id: number
+          task_id: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           dependencies?: string | null
           due_date?: string | null
-          meeting_id?: number | null
+          meeting_id?: string | null
           owner?: string | null
           priority?: string | null
           status?: string | null
           task: string
-          task_id?: number
+          task_id?: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           dependencies?: string | null
           due_date?: string | null
-          meeting_id?: number | null
+          meeting_id?: string | null
           owner?: string | null
           priority?: string | null
           status?: string | null
           task?: string
-          task_id?: number
+          task_id?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -90,7 +90,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_string_id: {
+        Args: { table_name: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
