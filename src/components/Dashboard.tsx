@@ -65,6 +65,7 @@ interface TaskRow {
 // Meeting operations
 const meetingService = {
   async getAll(): Promise<MeetingRow[]> {
+    // For now, get all meetings regardless of user_id to show dummy data
     const { data, error } = await supabase
       .from('meetings')
       .select('*')
@@ -89,6 +90,7 @@ const meetingService = {
 // Task operations
 const taskService = {
   async getAll(): Promise<TaskRow[]> {
+    // For now, get all tasks regardless of user association to show dummy data
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
@@ -135,7 +137,7 @@ const Dashboard = () => {
         title: meeting.title || '',
         date: meeting.meeting_date || '',
         duration: '30 min', // default since not in DB
-        participants: 0, // default since not in DB
+        participants: meeting.mom?.attendees?.length || 0, // get from mom.attendees if available
         transcription: undefined, // not in current DB
         mom_content: meeting.mom ? JSON.stringify(meeting.mom) : undefined,
         status: 'completed', // default status
@@ -152,8 +154,8 @@ const Dashboard = () => {
         title: task.task || '',
         description: task.dependencies || '', // use dependencies as description for now
         due_date: task.due_date,
-        status: task.status || 'pending',
-        priority: task.priority || 'medium',
+        status: task.status?.toLowerCase() || 'pending',
+        priority: task.priority?.toLowerCase() || 'medium',
         meeting_title: 'Meeting', // default since not joined
         assignee: task.owner || 'Unassigned',
         created_at: task.created_at || '',
