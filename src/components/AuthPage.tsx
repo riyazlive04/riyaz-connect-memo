@@ -13,13 +13,18 @@ import {
   ArrowRight,
   Sparkles,
   Clock,
-  TrendingUp
+  TrendingUp,
+  FolderOpen
 } from "lucide-react";
 import { toast } from "sonner";
 
 const AuthPage = () => {
-  const handleMSTeamsLogin = () => {
-    toast.info("MS Teams OAuth will be available once backend is connected");
+  const handleGoogleDriveLogin = () => {
+    // Google Drive OAuth integration would go here
+    // For now, we'll show a more appropriate message
+    toast.info("Connecting to Google Drive...");
+    // In a real implementation, this would trigger OAuth flow
+    // window.location.href = '/auth/google-drive';
   };
 
   const handleGmailLogin = () => {
@@ -111,7 +116,7 @@ const AuthPage = () => {
             <Button 
               size="lg" 
               className="btn-primary px-8 py-6 text-lg h-auto group shadow-medium hover:shadow-glow transition-all duration-300"
-              onClick={handleMSTeamsLogin}
+              onClick={handleGoogleDriveLogin}
             >
               <Globe className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
               <span className="text-glow">Get Started Free</span>
@@ -133,18 +138,18 @@ const AuthPage = () => {
             <CardHeader className="text-center pb-6">
               <CardTitle className="text-2xl mb-2 gradient-text-glow">Sign In to Continue</CardTitle>
               <CardDescription className="text-base text-muted-foreground">
-                Choose your preferred platform to access your meetings
+                Connect your Google Drive to access and manage your meetings
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Button 
                 className="w-full btn-primary flex items-center space-x-3 h-14 text-base group shadow-medium hover:shadow-glow transition-all duration-300"
-                onClick={handleMSTeamsLogin}
+                onClick={handleGoogleDriveLogin}
               >
                 <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-soft">
-                  <Globe className="w-4 h-4 text-primary" />
+                  <FolderOpen className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-glow">Continue with Microsoft Teams</span>
+                <span className="text-glow">Continue with Google Drive</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
               
@@ -228,7 +233,7 @@ const AuthPage = () => {
               <Button 
                 size="lg" 
                 className="btn-primary px-12 py-6 text-lg h-auto group shadow-medium hover:shadow-glow transition-all duration-300"
-                onClick={handleMSTeamsLogin}
+                onClick={handleGoogleDriveLogin}
               >
                 <span className="text-glow">Start Your Free Trial</span>
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
