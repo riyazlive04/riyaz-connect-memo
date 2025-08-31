@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,62 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, Pencil, Trash2, Mail, User } from "lucide-react";
 import { toast } from "sonner";
-import { employeeService, type Employee } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Employee {
+  id: string
+  name: string
+  email: string
+  role: string
+  project_manager_id?: string
+  created_at: string
+  updated_at: string
+}
+
+// Employee operations
+const employeeService = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .order('name')
+    
+    if (error) throw error
+    return data
+  },
+
+  async create(employee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>) {
+    const { data, error } = await supabase
+      .from('employees')
+      .insert(employee)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async update(id: string, updates: Partial<Employee>) {
+    const { data, error } = await supabase
+      .from('employees')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('employees')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+  }
+}
 
 const TeamManagement = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);

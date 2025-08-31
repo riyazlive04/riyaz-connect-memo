@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,93 @@ import MeetingCard from "./MeetingCard";
 import TaskCard from "./TaskCard";
 import TeamManagement from "./TeamManagement";
 import { toast } from "sonner";
-import { meetingService, taskService, type Meeting, type Task } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
+
+// Types for the components
+interface Meeting {
+  id: string
+  title: string
+  date: string
+  duration: string
+  participants: number
+  transcription?: string
+  mom_content?: string
+  status: string
+  file_url?: string
+  created_at: string
+  updated_at: string
+}
+
+interface Task {
+  id: string
+  meeting_id: string
+  employee_id?: string
+  title: string
+  description?: string
+  due_date?: string
+  status: string
+  priority: string
+  meeting_title?: string
+  assignee?: string
+  created_at: string
+  updated_at: string
+}
+
+// Meeting operations
+const meetingService = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('meetings')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data
+  },
+
+  async getById(id: string) {
+    const { data, error } = await supabase
+      .from('meetings')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+}
+
+// Task operations
+const taskService = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select(`
+        *,
+        employees:employee_id (
+          name,
+          email,
+          role
+        )
+      `)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data
+  },
+
+  async updateStatus(id: string, status: string) {
+    const { data, error } = await supabase
+      .from('tasks')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+}
 
 const Dashboard = () => {
   const [selectedMeeting, setSelectedMeeting] = useState<string | null>(null);
