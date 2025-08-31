@@ -27,7 +27,7 @@ import { CalendarIcon, ChevronDown, Plus, User, Upload } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MeetingUpload from "./MeetingUpload";
@@ -85,6 +85,7 @@ const Dashboard = () => {
   };
 
   const handleMeetingClick = (meeting: Meeting) => {
+    console.log("Meeting clicked:", meeting);
     setSelectedMeeting(meeting);
   };
 
@@ -258,14 +259,6 @@ const Dashboard = () => {
 
   return (
     <div className="container mx-auto py-10">
-      {/* Demo Mode Banner */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-          <p className="text-blue-700 font-medium">Demo Mode - Showing sample meeting data</p>
-        </div>
-      </div>
-
       <Tabs defaultValue="meetings" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="meetings">Meetings Dashboard</TabsTrigger>
@@ -429,7 +422,10 @@ const Dashboard = () => {
                       <TableRow 
                         key={meeting.id}
                         className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => handleMeetingClick(meeting)}
+                        onClick={() => {
+                          console.log("Row clicked:", meeting.title);
+                          handleMeetingClick(meeting);
+                        }}
                       >
                         <TableCell className="font-medium hover:text-primary transition-colors">
                           {meeting.title}
