@@ -44,4 +44,3 @@ const TrialStatus = ({ trialEndDate, credits, trialCreditsUsed, onUpgrade }: Tri
 };
 
 export default TrialStatus;
-</TrialStatus>
