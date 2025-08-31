@@ -1,91 +1,92 @@
-
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { Menu } from 'lucide-react';
 
 const Header = () => {
   const { user, signOut } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast.success("Signed out successfully");
     } catch (error) {
-      console.error("Error signing out:", error);
-      toast.error("Failed to sign out");
+      console.error('Error signing out:', error);
     }
   };
 
-  const getUserInitials = () => {
-    if (!user?.user_metadata?.full_name) return "U";
-    return user.user_metadata.full_name
-      .split(" ")
-      .map((name: string) => name[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   return (
-    <header className="border-b bg-card shadow-sm">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-md">
-            <span className="text-white font-bold text-lg">M</span>
+    <header className="bg-background border-b border-border sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-8">
+            <h1 className="text-2xl font-bold text-primary">Meeting Manager</h1>
+            
+            {user && (
+              <nav className="hidden md:flex space-x-6">
+                <a href="/" className="text-foreground hover:text-primary transition-colors">
+                  Dashboard
+                </a>
+                <a href="/pricing" className="text-foreground hover:text-primary transition-colors">
+                  Pricing
+                </a>
+              </nav>
+            )}
           </div>
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">MeetingMaster</h1>
-            <p className="text-sm text-muted-foreground">Project Management Dashboard</p>
-          </div>
+
+          {user && (
+            <div className="flex items-center space-x-4">
+              <div className="hidden md:flex items-center space-x-4">
+                <span className="text-sm text-muted-foreground">
+                  {user.email}
+                </span>
+                <Button 
+                  onClick={handleSignOut} 
+                  variant="outline" 
+                  size="sm"
+                >
+                  Sign Out
+                </Button>
+              </div>
+
+              <Button
+                className="md:hidden"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center space-x-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={user?.user_metadata?.avatar_url} alt="Profile" />
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {getUserInitials()}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <div className="flex items-center justify-start gap-2 p-2">
-                <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">{user?.user_metadata?.full_name || "User"}</p>
-                  <p className="w-[200px] truncate text-sm text-muted-foreground">
-                    {user?.email}
-                  </p>
-                </div>
+        {/* Mobile menu */}
+        {isMenuOpen && user && (
+          <div className="md:hidden mt-4 pt-4 border-t border-border">
+            <nav className="flex flex-col space-y-2">
+              <a href="/" className="text-foreground hover:text-primary transition-colors py-2">
+                Dashboard
+              </a>
+              <a href="/pricing" className="text-foreground hover:text-primary transition-colors py-2">
+                Pricing
+              </a>
+              <div className="pt-2 border-t border-border">
+                <span className="text-sm text-muted-foreground block mb-2">
+                  {user.email}
+                </span>
+                <Button 
+                  onClick={handleSignOut} 
+                  variant="outline" 
+                  size="sm"
+                  className="w-full"
+                >
+                  Sign Out
+                </Button>
               </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sign out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
