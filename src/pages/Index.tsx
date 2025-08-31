@@ -12,22 +12,36 @@ const Index = () => {
   const { user, loading } = useAuth();
   const [showPricing, setShowPricing] = useState(false);
 
+  console.log("Index component - user:", user, "loading:", loading);
+
   // Check user credits if authenticated
-  const { data: userCredits } = useQuery({
+  const { data: userCredits, isLoading: creditsLoading, error: creditsError } = useQuery({
     queryKey: ['user-credits', user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await supabase
+      console.log("Fetching credits for user:", user.id);
+      const { data, error } = await supabase
         .from('user_credits')
         .select('credits, is_trial_user, trial_end_date')
         .eq('user_id', user.id)
-        .single();
-      return data;
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Credits fetch error:", error);
+        // Return default credits if table doesn't exist or user not found
+        return { credits: 100, is_trial_user: true, trial_end_date: null };
+      }
+      
+      console.log("User credits data:", data);
+      return data || { credits: 100, is_trial_user: true, trial_end_date: null };
     },
     enabled: !!user,
   });
 
+  console.log("Credits loading:", creditsLoading, "Credits data:", userCredits, "Credits error:", creditsError);
+
   if (loading) {
+    console.log("Auth loading...");
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground text-lg">Loading...</div>
@@ -37,6 +51,7 @@ const Index = () => {
 
   // If user is not authenticated, show home page or pricing
   if (!user) {
+    console.log("No user, showing homepage or pricing. showPricing:", showPricing);
     if (showPricing) {
       return (
         <div className="min-h-screen bg-background">
@@ -48,13 +63,26 @@ const Index = () => {
     return <HomePage onGetStarted={() => setShowPricing(true)} />;
   }
 
+  // If still loading credits, show loading state
+  if (creditsLoading) {
+    console.log("Credits loading...");
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground text-lg">Loading dashboard...</div>
+      </div>
+    );
+  }
+
   // Check if user has credits or if trial has expired
   const hasCredits = userCredits && userCredits.credits > 0;
   const isTrialExpired = userCredits?.is_trial_user && userCredits?.trial_end_date && 
     new Date(userCredits.trial_end_date) < new Date();
 
+  console.log("Has credits:", hasCredits, "Is trial expired:", isTrialExpired);
+
   // If user has no credits or trial expired, show pricing
   if (!hasCredits || isTrialExpired) {
+    console.log("No credits or trial expired, showing pricing");
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -75,6 +103,7 @@ const Index = () => {
   }
 
   // User is authenticated and has credits, show dashboard
+  console.log("Showing dashboard");
   return (
     <div className="min-h-screen bg-background">
       <Header />
