@@ -65,7 +65,7 @@ const PricingPlans = () => {
 
     try {
       // Create order via Supabase edge function
-      const { data, error } = await subabase.functions.invoke('create-razorpay-order', {
+      const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
         body: {
           amount: amount * 100, // Convert to paise
           credits: credits,
