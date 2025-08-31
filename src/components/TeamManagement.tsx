@@ -10,87 +10,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, Pencil, Trash2, Mail, User } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-// For now, we'll manage employees locally since the employees table isn't in the current TypeScript types
-// This is a temporary solution until the database types are updated
-interface Employee {
-  id: string
-  name: string
-  email: string
-  role: string
-  project_manager_id?: string
-  created_at: string
-  updated_at: string
-}
-
-// Mock employee service - replace with actual Supabase calls once types are updated
-const employeeService = {
-  async getAll(): Promise<Employee[]> {
-    // For now, return mock data
-    const mockEmployees: Employee[] = [
-      {
-        id: '1',
-        name: 'John Doe',
-        email: 'john@example.com',
-        role: 'Frontend Developer',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '2',
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        role: 'Product Manager',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ];
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return mockEmployees;
-  },
-
-  async create(employee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>): Promise<Employee> {
-    // Mock implementation - in real app this would call Supabase
-    const newEmployee: Employee = {
-      ...employee,
-      id: Math.random().toString(36).substr(2, 9),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return newEmployee;
-  },
-
-  async update(id: string, updates: Partial<Employee>): Promise<Employee> {
-    // Mock implementation
-    const updatedEmployee: Employee = {
-      id,
-      name: updates.name || '',
-      email: updates.email || '',
-      role: updates.role || '',
-      project_manager_id: updates.project_manager_id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return updatedEmployee;
-  },
-
-  async delete(id: string): Promise<void> {
-    // Mock implementation
-    await new Promise(resolve => setTimeout(resolve, 300));
-  }
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  project_manager_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const TeamManagement = () => {
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const { user } = useAuth();
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -99,9 +37,9 @@ const TeamManagement = () => {
 
   const roles = [
     "Frontend Developer",
-    "Backend Developer",
+    "Backend Developer", 
     "Full Stack Developer",
-    "UI/UX Designer", 
+    "UI/UX Designer",
     "Product Manager",
     "Project Manager",
     "QA Engineer",
@@ -111,15 +49,25 @@ const TeamManagement = () => {
   ];
 
   useEffect(() => {
-    loadEmployees();
-  }, []);
+    if (user) {
+      loadTeamMembers();
+    }
+  }, [user]);
 
-  const loadEmployees = async () => {
+  const loadTeamMembers = async () => {
+    if (!user) return;
+    
     try {
-      const data = await employeeService.getAll();
-      setEmployees(data);
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('project_manager_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTeamMembers(data || []);
     } catch (error) {
-      console.error('Error loading employees:', error);
+      console.error('Error loading team members:', error);
       toast.error('Failed to load team members');
     } finally {
       setLoading(false);
@@ -134,31 +82,59 @@ const TeamManagement = () => {
       return;
     }
 
+    if (!user) {
+      toast.error('You must be logged in to manage team members');
+      return;
+    }
+
     try {
-      if (editingEmployee) {
-        await employeeService.update(editingEmployee.id, formData);
+      if (editingMember) {
+        const { error } = await supabase
+          .from('team_members')
+          .update({
+            name: formData.name,
+            email: formData.email,
+            role: formData.role,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingMember.id);
+
+        if (error) throw error;
         toast.success('Team member updated successfully');
       } else {
-        await employeeService.create(formData);
+        const { error } = await supabase
+          .from('team_members')
+          .insert({
+            name: formData.name,
+            email: formData.email,
+            role: formData.role,
+            project_manager_id: user.id
+          });
+
+        if (error) throw error;
         toast.success('Team member added successfully');
       }
       
       setFormData({ name: "", email: "", role: "" });
-      setEditingEmployee(null);
+      setEditingMember(null);
       setIsDialogOpen(false);
-      loadEmployees();
-    } catch (error) {
-      console.error('Error saving employee:', error);
-      toast.error('Failed to save team member');
+      loadTeamMembers();
+    } catch (error: any) {
+      console.error('Error saving team member:', error);
+      if (error.code === '23505') {
+        toast.error('A team member with this email already exists');
+      } else {
+        toast.error('Failed to save team member');
+      }
     }
   };
 
-  const handleEdit = (employee: Employee) => {
-    setEditingEmployee(employee);
+  const handleEdit = (member: TeamMember) => {
+    setEditingMember(member);
     setFormData({
-      name: employee.name,
-      email: employee.email,
-      role: employee.role
+      name: member.name,
+      email: member.email,
+      role: member.role
     });
     setIsDialogOpen(true);
   };
@@ -169,18 +145,23 @@ const TeamManagement = () => {
     }
 
     try {
-      await employeeService.delete(id);
+      const { error } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
       toast.success('Team member removed successfully');
-      loadEmployees();
+      loadTeamMembers();
     } catch (error) {
-      console.error('Error deleting employee:', error);
+      console.error('Error deleting team member:', error);
       toast.error('Failed to remove team member');
     }
   };
 
   const resetForm = () => {
     setFormData({ name: "", email: "", role: "" });
-    setEditingEmployee(null);
+    setEditingMember(null);
   };
 
   if (loading) {
@@ -216,7 +197,7 @@ const TeamManagement = () => {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>
-                  {editingEmployee ? 'Edit Team Member' : 'Add New Team Member'}
+                  {editingMember ? 'Edit Team Member' : 'Add New Team Member'}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -258,7 +239,7 @@ const TeamManagement = () => {
                 </div>
                 <div className="flex gap-2 pt-4">
                   <Button type="submit" className="btn-primary flex-1">
-                    {editingEmployee ? 'Update Member' : 'Add Member'}
+                    {editingMember ? 'Update Member' : 'Add Member'}
                   </Button>
                   <Button 
                     type="button" 
@@ -274,7 +255,7 @@ const TeamManagement = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {employees.length === 0 ? (
+        {teamMembers.length === 0 ? (
           <div className="text-center py-8">
             <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-muted-foreground">No team members yet</h3>
@@ -287,39 +268,39 @@ const TeamManagement = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Joined</TableHead>
+                <TableHead>Added</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {employees.map((employee) => (
-                <TableRow key={employee.id}>
-                  <TableCell className="font-medium">{employee.name}</TableCell>
+              {teamMembers.map((member) => (
+                <TableRow key={member.id}>
+                  <TableCell className="font-medium">{member.name}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Mail className="w-4 h-4 text-muted-foreground" />
-                      <span>{employee.email}</span>
+                      <span>{member.email}</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{employee.role}</Badge>
+                    <Badge variant="secondary">{member.role}</Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(employee.created_at).toLocaleDateString()}
+                    {new Date(member.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEdit(employee)}
+                        onClick={() => handleEdit(member)}
                       >
                         <Pencil className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(employee.id)}
+                        onClick={() => handleDelete(member.id)}
                       >
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>

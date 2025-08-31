@@ -1,8 +1,8 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Mic, 
   FileText, 
   Users, 
   Mail, 
@@ -13,48 +13,39 @@ import {
   ArrowRight,
   Sparkles,
   Clock,
-  TrendingUp,
-  FolderOpen
+  TrendingUp
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AuthPage = () => {
-  const handleGoogleDriveLogin = () => {
-    // Google Drive OAuth integration would go here
-    // For now, we'll show a more appropriate message
-    toast.info("Connecting to Google Drive...");
-    // In a real implementation, this would trigger OAuth flow
-    // window.location.href = '/auth/google-drive';
-  };
+  const { signInWithGoogle } = useAuth();
 
-  const handleGmailLogin = () => {
-    toast.info("Gmail OAuth will be available once backend is connected");
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('Failed to sign in with Google. Please try again.');
+    }
   };
 
   const features = [
     {
-      icon: Mic,
       title: "Smart Transcription",
       description: "AI-powered audio/video transcription with 99%+ accuracy",
-      color: "text-blue-500"
     },
     {
-      icon: FileText,
-      title: "Auto MoM Generation",
+      title: "Auto MoM Generation", 
       description: "Structured meeting minutes generated in seconds",
-      color: "text-green-500"
     },
     {
-      icon: Users,
       title: "Task Assignment",
       description: "Smart task detection with automatic owner assignment",
-      color: "text-purple-500"
     },
     {
-      icon: Mail,
       title: "Smart Notifications",
       description: "Contextual follow-ups via email and Teams",
-      color: "text-orange-500"
     }
   ];
 
@@ -116,18 +107,11 @@ const AuthPage = () => {
             <Button 
               size="lg" 
               className="btn-primary px-8 py-6 text-lg h-auto group shadow-medium hover:shadow-glow transition-all duration-300"
-              onClick={handleGoogleDriveLogin}
+              onClick={handleGoogleLogin}
             >
               <Globe className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
               <span className="text-glow">Get Started Free</span>
               <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="px-8 py-6 text-lg h-auto border-2 border-primary/20 hover:bg-primary/5 hover:text-primary hover:border-primary/40 hover:shadow-soft transition-all duration-300"
-            >
-              Watch Demo
             </Button>
           </div>
         </div>
@@ -138,30 +122,18 @@ const AuthPage = () => {
             <CardHeader className="text-center pb-6">
               <CardTitle className="text-2xl mb-2 gradient-text-glow">Sign In to Continue</CardTitle>
               <CardDescription className="text-base text-muted-foreground">
-                Connect your Google Drive to access and manage your meetings
+                Sign in with Google to access your meeting management dashboard
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Button 
                 className="w-full btn-primary flex items-center space-x-3 h-14 text-base group shadow-medium hover:shadow-glow transition-all duration-300"
-                onClick={handleGoogleDriveLogin}
+                onClick={handleGoogleLogin}
               >
                 <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-soft">
-                  <FolderOpen className="w-4 h-4 text-primary" />
+                  <Globe className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-glow">Continue with Google Drive</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="w-full flex items-center space-x-3 h-14 text-base border-2 border-red-200 hover:bg-red-50/80 hover:border-red-300 hover:text-red-600 hover:shadow-soft group transition-all duration-300"
-                onClick={handleGmailLogin}
-              >
-                <div className="w-6 h-6 bg-red-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-soft">
-                  <Mail className="w-4 h-4 text-white" />
-                </div>
-                <span>Continue with Gmail</span>
+                <span className="text-glow">Continue with Google</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
               
@@ -183,8 +155,8 @@ const AuthPage = () => {
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <CardHeader className="pb-4">
-                <div className={`mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-soft`}>
-                  <feature.icon className="w-8 h-8 text-white" />
+                <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-soft">
+                  <FileText className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-xl mb-2 group-hover:text-primary group-hover:text-glow transition-all duration-300">
                   {feature.title}
@@ -233,7 +205,7 @@ const AuthPage = () => {
               <Button 
                 size="lg" 
                 className="btn-primary px-12 py-6 text-lg h-auto group shadow-medium hover:shadow-glow transition-all duration-300"
-                onClick={handleGoogleDriveLogin}
+                onClick={handleGoogleLogin}
               >
                 <span className="text-glow">Start Your Free Trial</span>
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />

@@ -1,14 +1,21 @@
 
-import { useState } from "react";
 import AuthPage from "@/components/AuthPage";
 import Header from "@/components/Header";
 import Dashboard from "@/components/Dashboard";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
-  // In real app, this would check authentication status from Supabase
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, loading } = useAuth();
 
-  if (!isAuthenticated) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
     return <AuthPage />;
   }
 
