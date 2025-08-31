@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      credit_transactions: {
+        Row: {
+          created_at: string
+          credits: number
+          description: string | null
+          id: string
+          razorpay_payment_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits: number
+          description?: string | null
+          id?: string
+          razorpay_payment_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          description?: string | null
+          id?: string
+          razorpay_payment_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meetings: {
         Row: {
           created_at: string | null
@@ -35,6 +65,51 @@ export type Database = {
           meeting_id?: string
           mom?: Json | null
           title?: string
+        }
+        Relationships: []
+      }
+      payment_orders: {
+        Row: {
+          amount: number
+          completed_at: string | null
+          created_at: string
+          credits: number
+          id: string
+          plan_name: string
+          razorpay_order_id: string
+          razorpay_payment_id: string | null
+          session_token: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          completed_at?: string | null
+          created_at?: string
+          credits: number
+          id?: string
+          plan_name: string
+          razorpay_order_id: string
+          razorpay_payment_id?: string | null
+          session_token?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          completed_at?: string | null
+          created_at?: string
+          credits?: number
+          id?: string
+          plan_name?: string
+          razorpay_order_id?: string
+          razorpay_payment_id?: string | null
+          session_token?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -112,6 +187,30 @@ export type Database = {
           project_manager_id?: string
           role?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_credits: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

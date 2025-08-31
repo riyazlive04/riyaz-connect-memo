@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -25,13 +26,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Handle post-login payment processing
+        if (event === 'SIGNED_IN' && session?.user) {
+          await processPendingPayment(session.user);
+        }
+        
         setLoading(false);
       }
     );
@@ -45,6 +53,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const processPendingPayment = async (user: User) => {
+    const pendingPayment = localStorage.getItem('pendingPayment');
+    if (pendingPayment) {
+      try {
+        const paymentData = JSON.parse(pendingPayment);
+        
+        // Verify the payment and associate it with the user
+        const { error } = await supabase.functions.invoke('verify-razorpay-payment', {
+          body: {
+            ...paymentData,
+            userId: user.id
+          }
+        });
+
+        if (!error) {
+          toast({
+            title: "Account Setup Complete!",
+            description: `${paymentData.credits} credits have been added to your account.`,
+          });
+        }
+        
+        // Clear the pending payment
+        localStorage.removeItem('pendingPayment');
+      } catch (error) {
+        console.error('Error processing pending payment:', error);
+      }
+    }
+  };
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({

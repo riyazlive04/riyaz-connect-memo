@@ -1,11 +1,30 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { Menu } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Menu, CreditCard } from 'lucide-react';
 
 const Header = () => {
   const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Fetch user credits
+  const { data: userCredits } = useQuery({
+    queryKey: ['user-credits', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from('user_credits')
+        .select('credits')
+        .eq('user_id', user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user,
+  });
 
   const handleSignOut = async () => {
     try {
@@ -37,6 +56,12 @@ const Header = () => {
           {user && (
             <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-4">
+                {userCredits && (
+                  <Badge variant="secondary" className="flex items-center space-x-1">
+                    <CreditCard className="w-4 h-4" />
+                    <span>{userCredits.credits} Credits</span>
+                  </Badge>
+                )}
                 <span className="text-sm text-muted-foreground">
                   {user.email}
                 </span>
@@ -72,6 +97,12 @@ const Header = () => {
                 Pricing
               </a>
               <div className="pt-2 border-t border-border">
+                {userCredits && (
+                  <Badge variant="secondary" className="flex items-center space-x-1 w-fit mb-2">
+                    <CreditCard className="w-4 h-4" />
+                    <span>{userCredits.credits} Credits</span>
+                  </Badge>
+                )}
                 <span className="text-sm text-muted-foreground block mb-2">
                   {user.email}
                 </span>

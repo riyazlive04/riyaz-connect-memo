@@ -19,26 +19,35 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    // Get authenticated user
-    const authHeader = req.headers.get('Authorization')!;
-    const token = authHeader.replace('Bearer ', '');
-    const { data } = await supabase.auth.getUser(token);
-    const user = data.user;
-
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
     const { 
       razorpay_order_id, 
       razorpay_payment_id, 
       razorpay_signature, 
       credits,
-      planName 
+      planName,
+      userId 
     } = await req.json();
 
+    let user = null;
+    
+    // Get user either from auth header or from userId (for post-login processing)
+    if (userId) {
+      user = { id: userId };
+    } else {
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const { data } = await supabase.auth.getUser(token);
+        user = data.user;
+      }
+    }
+
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     // Verify signature
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+    const razorpayKeySecret = "eZkG2VMQnv1clQObOrgoL8PX";
     if (!razorpayKeySecret) {
       throw new Error('Razorpay secret not configured');
     }
@@ -52,16 +61,17 @@ serve(async (req) => {
       throw new Error('Payment verification failed');
     }
 
-    // Update payment order status and add credits
+    // Use service role client for database operations
     const supabaseService = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Update order status
+    // Update payment order status and associate with user if needed
     await supabaseService
       .from('payment_orders')
       .update({
+        user_id: user.id,
         status: 'completed',
         razorpay_payment_id: razorpay_payment_id,
         completed_at: new Date().toISOString()

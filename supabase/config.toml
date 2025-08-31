@@ -12,10 +12,10 @@ max_rows = 1000
 verify_jwt = false
 
 [functions.create-razorpay-order]
-verify_jwt = true
+verify_jwt = false
 
 [functions.verify-razorpay-payment]
-verify_jwt = true
+verify_jwt = false
 
 [functions.meetings-webhook]
 verify_jwt = false

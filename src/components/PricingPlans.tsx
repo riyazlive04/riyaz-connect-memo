@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const PricingPlans = () => {
-  const { user } = useAuth();
+  const { user, signInWithGoogle } = useAuth();
   const { toast } = useToast();
 
   const plans = [
@@ -54,22 +54,18 @@ const PricingPlans = () => {
   ];
 
   const handlePayment = async (planName: string, amount: number, credits: number) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to purchase a plan.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
-      // Create order via Supabase edge function
+      // Generate a session token for unauthenticated users
+      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create order via Supabase edge function (without authentication)
       const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
         body: {
           amount: amount * 100, // Convert to paise
           credits: credits,
-          planName: planName
+          planName: planName,
+          sessionToken: sessionToken,
+          authenticated: !!user
         }
       });
 
@@ -84,34 +80,31 @@ const PricingPlans = () => {
         description: `${planName} Plan - ${credits} Credits`,
         order_id: data.order_id,
         handler: async function (response: any) {
-          // Verify payment
-          const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-razorpay-payment', {
-            body: {
+          if (!user) {
+            // Store payment info in localStorage for post-login processing
+            localStorage.setItem('pendingPayment', JSON.stringify({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               credits: credits,
-              planName: planName
-            }
-          });
+              planName: planName,
+              sessionToken: sessionToken
+            }));
 
-          if (verifyError) {
             toast({
-              title: "Payment Verification Failed",
-              description: "Please contact support if amount was deducted.",
-              variant: "destructive"
+              title: "Payment Successful!",
+              description: "Please sign in with Google to complete your account setup.",
             });
-            return;
-          }
 
-          toast({
-            title: "Payment Successful!",
-            description: `${credits} credits added to your account.`,
-          });
+            // Trigger Google sign-in
+            await signInWithGoogle();
+          } else {
+            // User is already authenticated, verify payment normally
+            await verifyPayment(response, credits, planName);
+          }
         },
         prefill: {
-          email: user.email,
-          name: user.user_metadata?.full_name || ''
+          name: user?.user_metadata?.full_name || ''
         },
         theme: {
           color: '#3B82F6'
@@ -130,12 +123,52 @@ const PricingPlans = () => {
     }
   };
 
+  const verifyPayment = async (response: any, credits: number, planName: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('verify-razorpay-payment', {
+        body: {
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+          credits: credits,
+          planName: planName
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Payment Verification Failed",
+          description: "Please contact support if amount was deducted.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Payment Successful!",
+        description: `${credits} credits added to your account.`,
+      });
+    } catch (error) {
+      console.error('Payment verification error:', error);
+      toast({
+        title: "Payment Verification Failed",
+        description: "Please contact support if amount was deducted.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-foreground mb-4">Choose Your Plan</h2>
           <p className="text-xl text-muted-foreground">Get credits to process your meetings with AI-powered analysis</p>
+          {!user && (
+            <p className="text-sm text-muted-foreground mt-4">
+              After payment, you'll be asked to sign in with Google to access your dashboard
+            </p>
+          )}
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
