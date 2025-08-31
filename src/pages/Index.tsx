@@ -2,12 +2,15 @@
 import PricingPlans from "@/components/PricingPlans";
 import Header from "@/components/Header";
 import Dashboard from "@/components/Dashboard";
+import HomePage from "@/components/HomePage";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 const Index = () => {
   const { user, loading } = useAuth();
+  const [showPricing, setShowPricing] = useState(false);
 
   // Check user credits if authenticated
   const { data: userCredits } = useQuery({
@@ -32,13 +35,17 @@ const Index = () => {
     );
   }
 
-  // If user is not authenticated, show pricing plans
+  // If user is not authenticated, show home page or pricing
   if (!user) {
-    return (
-      <div className="min-h-screen bg-background">
-        <PricingPlans />
-      </div>
-    );
+    if (showPricing) {
+      return (
+        <div className="min-h-screen bg-background">
+          <PricingPlans />
+        </div>
+      );
+    }
+    
+    return <HomePage onGetStarted={() => setShowPricing(true)} />;
   }
 
   // Check if user has credits or if trial has expired

@@ -61,12 +61,12 @@ serve(async (req) => {
     const trialEndDate = new Date();
     trialEndDate.setDate(trialStartDate.getDate() + 14);
 
-    // Create trial account with 5 free credits
+    // Create trial account with 5 free credits (explicitly set to 5)
     await supabaseService
       .from('user_credits')
       .insert({
         user_id: user.id,
-        credits: 5,
+        credits: 5, // Explicitly set to 5 credits for free trial
         is_trial_user: true,
         trial_start_date: trialStartDate.toISOString(),
         trial_end_date: trialEndDate.toISOString(),
@@ -78,7 +78,7 @@ serve(async (req) => {
       .from('credit_transactions')
       .insert({
         user_id: user.id,
-        credits: 5,
+        credits: 5, // Explicitly set to 5 credits
         type: 'trial',
         description: '14-Day Free Trial - 5 Credits'
       });
@@ -87,7 +87,7 @@ serve(async (req) => {
       success: true, 
       message: 'Trial account created successfully',
       trialEndDate: trialEndDate.toISOString(),
-      credits: 5
+      credits: 5 // Return 5 credits explicitly
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
