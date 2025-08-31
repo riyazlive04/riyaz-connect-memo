@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Users, Clock, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Upload, BarChart3, Users, Clock, CheckCircle2 } from "lucide-react";
 import MeetingCard from "./MeetingCard";
 import TaskCard from "./TaskCard";
 import TeamManagement from "./TeamManagement";
-import MeetingDetails from "./MeetingDetails";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -220,12 +219,30 @@ const Dashboard = () => {
     }
   };
 
-  const handleViewMeetingDetails = (meetingId: string) => {
-    setSelectedMeeting(meetingId);
-  };
+  const handleUploadMeeting = async () => {
+    try {
+      // Test the webhook connection
+      const response = await fetch('https://n8n.srv930949.hstgr.cloud/webhook/0497ec7d-eead-4c47-b115-e7edd7f3b953', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          test: true,
+          timestamp: new Date().toISOString(),
+          message: 'Test connection from dashboard'
+        })
+      });
 
-  const handleBackToOverview = () => {
-    setSelectedMeeting(null);
+      if (response.ok) {
+        toast.success("Connected to n8n webhook successfully! Upload files to Google Drive to trigger processing.");
+      } else {
+        toast.error("Failed to connect to n8n webhook. Please check the webhook URL.");
+      }
+    } catch (error) {
+      console.error('Error testing webhook:', error);
+      toast.error("Error connecting to n8n webhook. Files uploaded to Google Drive will still be processed automatically.");
+    }
   };
 
   if (loading) {
@@ -234,43 +251,6 @@ const Dashboard = () => {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-pulse text-muted-foreground">Loading dashboard...</div>
         </div>
-      </div>
-    );
-  }
-
-  // If a meeting is selected, show meeting details
-  if (selectedMeeting) {
-    const meeting = meetings.find(m => m.id === selectedMeeting);
-    const meetingTasks = tasks.filter(task => task.meeting_id === selectedMeeting);
-    
-    if (!meeting) {
-      return (
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-muted-foreground">Meeting not found</div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button 
-            variant="outline" 
-            onClick={handleBackToOverview}
-            className="flex items-center space-x-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Overview</span>
-          </Button>
-        </div>
-        
-        <MeetingDetails 
-          meeting={meeting} 
-          tasks={meetingTasks}
-          onTaskStatusChange={handleTaskStatusChange}
-        />
       </div>
     );
   }
@@ -324,6 +304,27 @@ const Dashboard = () => {
         </Card>
       </div>
 
+      {/* Upload Section */}
+      <Card className="card-shadow">
+        <CardHeader>
+          <CardTitle>Upload New Meeting</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <Button 
+              className="btn-primary flex items-center space-x-2"
+              onClick={handleUploadMeeting}
+            >
+              <Upload className="w-4 h-4" />
+              <span>Test n8n Connection</span>
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Upload meeting recordings to Google Drive. n8n will automatically process them and create meetings, tasks, and team members.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Main Content Tabs */}
       <Tabs defaultValue="meetings" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
@@ -347,7 +348,7 @@ const Dashboard = () => {
                 <MeetingCard
                   key={meeting.id}
                   meeting={meeting}
-                  onClick={() => handleViewMeetingDetails(meeting.id)}
+                  onClick={() => setSelectedMeeting(meeting.id)}
                 />
               ))}
             </div>
