@@ -10,7 +10,7 @@ import TeamManagement from "./TeamManagement";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-// Types for the components
+// Types based on actual database schema
 interface Meeting {
   id: string
   title: string
@@ -40,23 +40,45 @@ interface Task {
   updated_at: string
 }
 
+// Database row types (what actually comes from Supabase)
+interface MeetingRow {
+  meeting_id: number
+  created_at: string
+  meeting_date: string
+  mom: any
+  title: string
+}
+
+interface TaskRow {
+  task_id: number
+  created_at: string
+  updated_at: string
+  status: string
+  priority: string
+  dependencies: string
+  task: string
+  owner: string
+  meeting_id: number
+  due_date: string
+}
+
 // Meeting operations
 const meetingService = {
-  async getAll() {
+  async getAll(): Promise<MeetingRow[]> {
     const { data, error } = await supabase
       .from('meetings')
       .select('*')
       .order('created_at', { ascending: false })
     
     if (error) throw error
-    return data
+    return data || []
   },
 
-  async getById(id: string) {
+  async getById(id: string): Promise<MeetingRow> {
     const { data, error } = await supabase
       .from('meetings')
       .select('*')
-      .eq('id', id)
+      .eq('meeting_id', id)
       .single()
     
     if (error) throw error
@@ -66,21 +88,21 @@ const meetingService = {
 
 // Task operations
 const taskService = {
-  async getAll() {
+  async getAll(): Promise<TaskRow[]> {
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
       .order('created_at', { ascending: false })
     
     if (error) throw error
-    return data
+    return data || []
   },
 
   async updateStatus(id: string, status: string) {
     const { data, error } = await supabase
       .from('tasks')
       .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', id)
+      .eq('task_id', id)
       .select()
       .single()
     
@@ -108,32 +130,32 @@ const Dashboard = () => {
       ]);
       
       // Transform meetings data to match interface
-      const transformedMeetings: Meeting[] = (meetingsData || []).map(meeting => ({
-        id: meeting.id || meeting.meeting_id?.toString() || '',
+      const transformedMeetings: Meeting[] = meetingsData.map(meeting => ({
+        id: meeting.meeting_id?.toString() || '',
         title: meeting.title || '',
-        date: meeting.date || meeting.meeting_date || '',
-        duration: meeting.duration || '30 min',
-        participants: meeting.participants || 0,
-        transcription: meeting.transcription,
-        mom_content: meeting.mom_content,
-        status: meeting.status || 'processing',
-        file_url: meeting.file_url,
+        date: meeting.meeting_date || '',
+        duration: '30 min', // default since not in DB
+        participants: 0, // default since not in DB
+        transcription: undefined, // not in current DB
+        mom_content: meeting.mom ? JSON.stringify(meeting.mom) : undefined,
+        status: 'completed', // default status
+        file_url: undefined, // not in current DB
         created_at: meeting.created_at || '',
-        updated_at: meeting.updated_at || ''
+        updated_at: meeting.created_at || '' // use created_at as fallback
       }));
 
       // Transform tasks data to match interface
-      const transformedTasks: Task[] = (tasksData || []).map(task => ({
-        id: task.id || task.task_id?.toString() || '',
+      const transformedTasks: Task[] = tasksData.map(task => ({
+        id: task.task_id?.toString() || '',
         meeting_id: task.meeting_id?.toString() || '',
-        employee_id: task.employee_id,
-        title: task.title || task.task || '',
-        description: task.description,
+        employee_id: undefined, // not in current DB
+        title: task.task || '',
+        description: task.dependencies || '', // use dependencies as description for now
         due_date: task.due_date,
         status: task.status || 'pending',
         priority: task.priority || 'medium',
-        meeting_title: task.meeting_title,
-        assignee: task.assignee || task.owner,
+        meeting_title: 'Meeting', // default since not joined
+        assignee: task.owner || 'Unassigned',
         created_at: task.created_at || '',
         updated_at: task.updated_at || ''
       }));
