@@ -1,8 +1,7 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Calendar, User, CheckCircle2, Clock, AlertTriangle, Play, Check, ArrowRight } from "lucide-react";
+import { Calendar, User, CheckCircle2, Clock, AlertTriangle, Play, Check, ArrowRight, Mail } from "lucide-react";
 
 interface TaskCardProps {
   task: {
@@ -16,9 +15,10 @@ interface TaskCardProps {
     meetingTitle: string;
   };
   onStatusChange?: (taskId: string, status: string) => void;
+  onFollowUp?: (taskId: string, assignee: string) => void;
 }
 
-const TaskCard = ({ task, onStatusChange }: TaskCardProps) => {
+const TaskCard = ({ task, onStatusChange, onFollowUp }: TaskCardProps) => {
   const getStatusBadge = () => {
     switch (task.status) {
       case "pending":
@@ -118,42 +118,54 @@ const TaskCard = ({ task, onStatusChange }: TaskCardProps) => {
           </div>
         </div>
         
-        {task.status !== "completed" && (
-          <div className="flex gap-2">
-            {task.status === "pending" && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 hover:bg-warning hover:text-white hover:border-warning transition-all duration-200 group/btn"
-                onClick={() => onStatusChange?.(task.id, "in-progress")}
-              >
-                <Play className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
-                Start Task
-                <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-              </Button>
-            )}
-            {task.status === "in-progress" && (
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="flex-1 btn-primary group/btn shadow-medium hover:shadow-large"
-                onClick={() => onStatusChange?.(task.id, "completed")}
-              >
-                <Check className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
-                Mark Complete
-              </Button>
-            )}
-          </div>
-        )}
-        
-        {task.status === "completed" && (
-          <div className="text-center py-2">
-            <div className="inline-flex items-center text-success text-sm font-medium">
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Task Completed
+        <div className="space-y-2">
+          {task.status !== "completed" && (
+            <div className="flex gap-2">
+              {task.status === "pending" && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 hover:bg-warning hover:text-white hover:border-warning transition-all duration-200 group/btn"
+                  onClick={() => onStatusChange?.(task.id, "in-progress")}
+                >
+                  <Play className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
+                  Start Task
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                </Button>
+              )}
+              {task.status === "in-progress" && (
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="flex-1 btn-primary group/btn shadow-medium hover:shadow-large"
+                  onClick={() => onStatusChange?.(task.id, "completed")}
+                >
+                  <Check className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
+                  Mark Complete
+                </Button>
+              )}
             </div>
-          </div>
-        )}
+          )}
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200 group/mail"
+            onClick={() => onFollowUp?.(task.id, task.assignee)}
+          >
+            <Mail className="w-4 h-4 mr-2 group-hover/mail:scale-110 transition-transform" />
+            Follow Up with {task.assignee}
+          </Button>
+          
+          {task.status === "completed" && (
+            <div className="text-center py-2">
+              <div className="inline-flex items-center text-success text-sm font-medium">
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Task Completed
+              </div>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

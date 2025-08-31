@@ -1,8 +1,8 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Users, FileText, CheckCircle2, AlertCircle, Timer, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import TaskCard from "./TaskCard";
 
 interface Meeting {
@@ -45,6 +45,30 @@ const MeetingDetails = ({ meeting, tasks, onTaskStatusChange, onBack }: MeetingD
   const completedTasks = tasks.filter(task => task.status === 'completed').length;
   const totalTasks = tasks.length;
   const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+  const handleFollowUp = (taskId: string, assignee: string) => {
+    // Create email content
+    const subject = `Follow up: ${tasks.find(task => task.id === taskId)?.title}`;
+    const taskDetails = tasks.find(task => task.id === taskId);
+    const body = `Hi ${assignee},
+
+I wanted to follow up on the task assigned to you from our meeting "${meeting.title}".
+
+Task: ${taskDetails?.title}
+Description: ${taskDetails?.description || 'No description provided'}
+Due Date: ${taskDetails?.due_date ? new Date(taskDetails.due_date).toLocaleDateString() : 'No due date set'}
+Status: ${taskDetails?.status}
+
+Please let me know if you need any assistance or have any questions.
+
+Best regards`;
+
+    // Open email client
+    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink, '_blank');
+    
+    toast.success(`Follow-up email template opened for ${assignee}`);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -285,6 +309,7 @@ const MeetingDetails = ({ meeting, tasks, onTaskStatusChange, onBack }: MeetingD
                 key={task.id}
                 task={task}
                 onStatusChange={onTaskStatusChange}
+                onFollowUp={handleFollowUp}
               />
             ))}
           </div>
