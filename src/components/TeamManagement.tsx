@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +31,7 @@ const employeeService = {
       .order('name')
     
     if (error) throw error
-    return data
+    return data || []
   },
 
   async create(employee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>) {
@@ -97,7 +98,17 @@ const TeamManagement = () => {
   const loadEmployees = async () => {
     try {
       const data = await employeeService.getAll();
-      setEmployees(data || []);
+      // Transform data to match Employee interface
+      const transformedEmployees: Employee[] = data.map(emp => ({
+        id: emp.id || '',
+        name: emp.name || '',
+        email: emp.email || '',
+        role: emp.role || '',
+        project_manager_id: emp.project_manager_id,
+        created_at: emp.created_at || '',
+        updated_at: emp.updated_at || ''
+      }));
+      setEmployees(transformedEmployees);
     } catch (error) {
       console.error('Error loading employees:', error);
       toast.error('Failed to load team members');

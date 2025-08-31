@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,14 +69,7 @@ const taskService = {
   async getAll() {
     const { data, error } = await supabase
       .from('tasks')
-      .select(`
-        *,
-        employees:employee_id (
-          name,
-          email,
-          role
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
     
     if (error) throw error
@@ -113,8 +107,39 @@ const Dashboard = () => {
         taskService.getAll()
       ]);
       
-      setMeetings(meetingsData || []);
-      setTasks(tasksData || []);
+      // Transform meetings data to match interface
+      const transformedMeetings: Meeting[] = (meetingsData || []).map(meeting => ({
+        id: meeting.id || meeting.meeting_id?.toString() || '',
+        title: meeting.title || '',
+        date: meeting.date || meeting.meeting_date || '',
+        duration: meeting.duration || '30 min',
+        participants: meeting.participants || 0,
+        transcription: meeting.transcription,
+        mom_content: meeting.mom_content,
+        status: meeting.status || 'processing',
+        file_url: meeting.file_url,
+        created_at: meeting.created_at || '',
+        updated_at: meeting.updated_at || ''
+      }));
+
+      // Transform tasks data to match interface
+      const transformedTasks: Task[] = (tasksData || []).map(task => ({
+        id: task.id || task.task_id?.toString() || '',
+        meeting_id: task.meeting_id?.toString() || '',
+        employee_id: task.employee_id,
+        title: task.title || task.task || '',
+        description: task.description,
+        due_date: task.due_date,
+        status: task.status || 'pending',
+        priority: task.priority || 'medium',
+        meeting_title: task.meeting_title,
+        assignee: task.assignee || task.owner,
+        created_at: task.created_at || '',
+        updated_at: task.updated_at || ''
+      }));
+      
+      setMeetings(transformedMeetings);
+      setTasks(transformedTasks);
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Failed to load dashboard data');
