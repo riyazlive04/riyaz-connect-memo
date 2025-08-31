@@ -1,98 +1,106 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, BarChart3, Users, Clock, CheckCircle2 } from "lucide-react";
 import MeetingCard from "./MeetingCard";
 import TaskCard from "./TaskCard";
+import TeamManagement from "./TeamManagement";
 import { toast } from "sonner";
+import { meetingService, taskService, type Meeting, type Task } from "@/lib/supabase";
 
 const Dashboard = () => {
   const [selectedMeeting, setSelectedMeeting] = useState<string | null>(null);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - in real app, this would come from Supabase
-  const stats = {
-    totalMeetings: 24,
-    activeTasks: 18,
-    completedTasks: 42,
-    totalHours: 156
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [meetingsData, tasksData] = await Promise.all([
+        meetingService.getAll(),
+        taskService.getAll()
+      ]);
+      
+      setMeetings(meetingsData || []);
+      setTasks(tasksData || []);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const meetings = [
-    {
-      id: "1",
-      title: "Weekly Team Standup - Engineering",
-      date: "Dec 15, 2024",
-      duration: "45 min",
-      participants: 8,
-      tasksTotal: 5,
-      tasksCompleted: 3,
-      status: "completed" as const
-    },
-    {
-      id: "2", 
-      title: "Product Review & Planning Session",
-      date: "Dec 14, 2024",
-      duration: "1h 30min",
-      participants: 6,
-      tasksTotal: 8,
-      tasksCompleted: 2,
-      status: "processing" as const
-    },
-    {
-      id: "3",
-      title: "Client Onboarding Meeting",
-      date: "Dec 13, 2024", 
-      duration: "1h",
-      participants: 4,
-      tasksTotal: 6,
-      tasksCompleted: 6,
-      status: "completed" as const
-    }
-  ];
+  // Calculate stats from real data
+  const stats = {
+    totalMeetings: meetings.length,
+    activeTasks: tasks.filter(task => task.status === 'in-progress' || task.status === 'pending').length,
+    completedTasks: tasks.filter(task => task.status === 'completed').length,
+    totalHours: meetings.reduce((acc, meeting) => {
+      const hours = parseInt(meeting.duration?.match(/\d+/)?.[0] || '0');
+      return acc + hours;
+    }, 0)
+  };
 
-  const tasks = [
-    {
-      id: "1",
-      title: "Update user authentication flow",
-      description: "Implement new OAuth integration for MS Teams and Gmail login",
-      assignee: "Sarah Johnson",
-      dueDate: "Dec 20, 2024",
-      status: "in-progress" as const,
-      priority: "high" as const,
-      meetingTitle: "Weekly Team Standup - Engineering"
-    },
-    {
-      id: "2",
-      title: "Create meeting dashboard mockups",
-      description: "Design wireframes for the new dashboard layout with task tracking",
-      assignee: "Mike Chen",
-      dueDate: "Dec 18, 2024",
-      status: "pending" as const,
-      priority: "medium" as const,
-      meetingTitle: "Product Review & Planning Session"
-    },
-    {
-      id: "3",
-      title: "Set up RazorPay integration",
-      description: "Configure payment gateway for subscription management",
-      assignee: "Alex Kumar",
-      dueDate: "Dec 16, 2024",
-      status: "overdue" as const,
-      priority: "high" as const,
-      meetingTitle: "Product Review & Planning Session"
-    }
-  ];
+  // Transform meetings data for MeetingCard component
+  const transformedMeetings = meetings.map(meeting => ({
+    id: meeting.id,
+    title: meeting.title,
+    date: new Date(meeting.date).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    }),
+    duration: meeting.duration || '30 min',
+    participants: meeting.participants || 0,
+    tasksTotal: tasks.filter(task => task.meeting_id === meeting.id).length,
+    tasksCompleted: tasks.filter(task => task.meeting_id === meeting.id && task.status === 'completed').length,
+    status: meeting.status as "processing" | "completed" | "failed"
+  }));
 
-  const handleTaskStatusChange = (taskId: string, status: string) => {
-    toast.success(`Task status updated to ${status}`);
-    // In real app, update Supabase here
+  // Transform tasks data for TaskCard component
+  const transformedTasks = tasks.map(task => ({
+    id: task.id,
+    title: task.title,
+    description: task.description || '',
+    assignee: task.assignee || 'Unassigned',
+    dueDate: task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date',
+    status: task.status as "pending" | "in-progress" | "completed" | "overdue",
+    priority: task.priority as "low" | "medium" | "high",
+    meetingTitle: task.meeting_title || 'Unknown Meeting'
+  }));
+
+  const handleTaskStatusChange = async (taskId: string, status: string) => {
+    try {
+      await taskService.updateStatus(taskId, status);
+      toast.success(`Task status updated to ${status}`);
+      loadData(); // Reload data to reflect changes
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast.error('Failed to update task status');
+    }
   };
 
   const handleUploadMeeting = () => {
-    toast.info("Upload feature will be available once backend is connected");
+    toast.info("Upload feature is now connected to n8n backend. Files uploaded to Google Drive will be processed automatically.");
   };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-pulse text-muted-foreground">Loading dashboard...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
@@ -105,7 +113,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalMeetings}</div>
-            <p className="text-xs text-muted-foreground">+4 from last month</p>
+            <p className="text-xs text-muted-foreground">From database</p>
           </CardContent>
         </Card>
 
@@ -116,7 +124,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.activeTasks}</div>
-            <p className="text-xs text-muted-foreground">-2 from yesterday</p>
+            <p className="text-xs text-muted-foreground">In progress + pending</p>
           </CardContent>
         </Card>
 
@@ -127,7 +135,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.completedTasks}</div>
-            <p className="text-xs text-muted-foreground">+12 this week</p>
+            <p className="text-xs text-muted-foreground">Successfully finished</p>
           </CardContent>
         </Card>
 
@@ -138,7 +146,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalHours}h</div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <p className="text-xs text-muted-foreground">Total recorded</p>
           </CardContent>
         </Card>
       </div>
@@ -155,10 +163,10 @@ const Dashboard = () => {
               onClick={handleUploadMeeting}
             >
               <Upload className="w-4 h-4" />
-              <span>Upload Recording</span>
+              <span>Connected to n8n</span>
             </Button>
             <p className="text-sm text-muted-foreground">
-              Supports audio/video files from Teams, Gmail, or direct upload
+              Files uploaded to Google Drive are automatically processed by n8n workflow
             </p>
           </div>
         </CardContent>
@@ -166,33 +174,58 @@ const Dashboard = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="meetings" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="meetings">Recent Meetings</TabsTrigger>
-          <TabsTrigger value="tasks">My Tasks</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="meetings">Recent Meetings ({transformedMeetings.length})</TabsTrigger>
+          <TabsTrigger value="tasks">My Tasks ({transformedTasks.length})</TabsTrigger>
+          <TabsTrigger value="team">Team Management</TabsTrigger>
         </TabsList>
 
         <TabsContent value="meetings" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {meetings.map((meeting) => (
-              <MeetingCard
-                key={meeting.id}
-                meeting={meeting}
-                onClick={() => setSelectedMeeting(meeting.id)}
-              />
-            ))}
-          </div>
+          {transformedMeetings.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-muted-foreground">No meetings yet</h3>
+                <p className="text-sm text-muted-foreground">Upload files to Google Drive to start processing meetings</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {transformedMeetings.map((meeting) => (
+                <MeetingCard
+                  key={meeting.id}
+                  meeting={meeting}
+                  onClick={() => setSelectedMeeting(meeting.id)}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="tasks" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onStatusChange={handleTaskStatusChange}
-              />
-            ))}
-          </div>
+          {transformedTasks.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <CheckCircle2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-muted-foreground">No tasks yet</h3>
+                <p className="text-sm text-muted-foreground">Tasks will appear here when meetings are processed</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {transformedTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onStatusChange={handleTaskStatusChange}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="team" className="space-y-4">
+          <TeamManagement />
         </TabsContent>
       </Tabs>
     </div>
