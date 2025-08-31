@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Menu, CreditCard } from 'lucide-react';
+import TrialStatus from '@/components/TrialStatus';
 
 const Header = () => {
   const { user, signOut } = useAuth();
@@ -18,7 +19,7 @@ const Header = () => {
       if (!user) return null;
       const { data } = await supabase
         .from('user_credits')
-        .select('credits')
+        .select('credits, is_trial_user, trial_end_date, trial_credits_used')
         .eq('user_id', user.id)
         .single();
       return data;
@@ -32,6 +33,10 @@ const Header = () => {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const handleUpgrade = () => {
+    window.location.href = '/pricing';
   };
 
   return (
@@ -56,7 +61,14 @@ const Header = () => {
           {user && (
             <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-4">
-                {userCredits && (
+                {userCredits && userCredits.is_trial_user && userCredits.trial_end_date ? (
+                  <TrialStatus 
+                    trialEndDate={userCredits.trial_end_date}
+                    credits={userCredits.credits}
+                    trialCreditsUsed={userCredits.trial_credits_used}
+                    onUpgrade={handleUpgrade}
+                  />
+                ) : userCredits && (
                   <Badge variant="secondary" className="flex items-center space-x-1">
                     <CreditCard className="w-4 h-4" />
                     <span>{userCredits.credits} Credits</span>
@@ -97,7 +109,16 @@ const Header = () => {
                 Pricing
               </a>
               <div className="pt-2 border-t border-border">
-                {userCredits && (
+                {userCredits && userCredits.is_trial_user && userCredits.trial_end_date ? (
+                  <div className="mb-2">
+                    <TrialStatus 
+                      trialEndDate={userCredits.trial_end_date}
+                      credits={userCredits.credits}
+                      trialCreditsUsed={userCredits.trial_credits_used}
+                      onUpgrade={handleUpgrade}
+                    />
+                  </div>
+                ) : userCredits && (
                   <Badge variant="secondary" className="flex items-center space-x-1 w-fit mb-2">
                     <CreditCard className="w-4 h-4" />
                     <span>{userCredits.credits} Credits</span>

@@ -195,6 +195,10 @@ export type Database = {
           created_at: string
           credits: number
           id: string
+          is_trial_user: boolean | null
+          trial_credits_used: number | null
+          trial_end_date: string | null
+          trial_start_date: string | null
           updated_at: string
           user_id: string
         }
@@ -202,6 +206,10 @@ export type Database = {
           created_at?: string
           credits?: number
           id?: string
+          is_trial_user?: boolean | null
+          trial_credits_used?: number | null
+          trial_end_date?: string | null
+          trial_start_date?: string | null
           updated_at?: string
           user_id: string
         }
@@ -209,6 +217,10 @@ export type Database = {
           created_at?: string
           credits?: number
           id?: string
+          is_trial_user?: boolean | null
+          trial_credits_used?: number | null
+          trial_end_date?: string | null
+          trial_start_date?: string | null
           updated_at?: string
           user_id?: string
         }

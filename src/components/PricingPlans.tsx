@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import FreeTrialCard from '@/components/FreeTrialCard';
 
 const PricingPlans = () => {
   const { user, signInWithGoogle } = useAuth();
@@ -52,6 +52,50 @@ const PricingPlans = () => {
       popular: false
     }
   ];
+
+  const handleFreeTrial = async () => {
+    try {
+      if (!user) {
+        toast({
+          title: "Sign In Required",
+          description: "Please sign in with Google to start your free trial.",
+        });
+        await signInWithGoogle();
+        return;
+      }
+
+      // Create trial account
+      const { data, error } = await supabase.functions.invoke('create-trial-account');
+
+      if (error) {
+        if (error.message?.includes('already has an account')) {
+          toast({
+            title: "Account Already Exists",
+            description: "You already have an account. Please check your dashboard.",
+            variant: "destructive"
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      toast({
+        title: "Free Trial Started!",
+        description: `Welcome! You have 5 free credits and 14 days to explore Meeting Manager.`,
+      });
+
+      // Refresh the page to update the UI
+      window.location.reload();
+    } catch (error) {
+      console.error('Trial creation error:', error);
+      toast({
+        title: "Trial Creation Failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handlePayment = async (planName: string, amount: number, credits: number) => {
     try {
@@ -163,15 +207,20 @@ const PricingPlans = () => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-foreground mb-4">Choose Your Plan</h2>
-          <p className="text-xl text-muted-foreground">Get credits to process your meetings with AI-powered analysis</p>
+          <p className="text-xl text-muted-foreground">Start with a free trial or get credits to process your meetings with AI-powered analysis</p>
           {!user && (
             <p className="text-sm text-muted-foreground mt-4">
-              After payment, you'll be asked to sign in with Google to access your dashboard
+              After signing up, you can start with a free trial or purchase credits
             </p>
           )}
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-8">
+          <FreeTrialCard 
+            onStartTrial={handleFreeTrial}
+            isAuthenticated={!!user}
+          />
+          
           {plans.map((plan, index) => (
             <Card key={index} className={`relative ${plan.popular ? 'border-primary shadow-lg' : ''}`}>
               {plan.popular && (
@@ -216,7 +265,7 @@ const PricingPlans = () => {
 
         <div className="mt-12 text-center">
           <p className="text-sm text-muted-foreground">
-            Secure payments powered by Razorpay • All plans include GST • Instant credit activation
+            Free trial includes 5 credits • Secure payments powered by Razorpay • All plans include GST • Instant credit activation
           </p>
         </div>
       </div>

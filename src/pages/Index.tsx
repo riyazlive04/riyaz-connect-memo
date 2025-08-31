@@ -16,7 +16,7 @@ const Index = () => {
       if (!user) return null;
       const { data } = await supabase
         .from('user_credits')
-        .select('credits')
+        .select('credits, is_trial_user, trial_end_date')
         .eq('user_id', user.id)
         .single();
       return data;
@@ -41,14 +41,26 @@ const Index = () => {
     );
   }
 
-  // If user is authenticated but has no credits, redirect to pricing
-  if (userCredits && userCredits.credits <= 0) {
+  // Check if user has credits or if trial has expired
+  const hasCredits = userCredits && userCredits.credits > 0;
+  const isTrialExpired = userCredits?.is_trial_user && userCredits?.trial_end_date && 
+    new Date(userCredits.trial_end_date) < new Date();
+
+  // If user has no credits or trial expired, show pricing
+  if (!hasCredits || isTrialExpired) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="container mx-auto px-4 py-12 text-center">
-          <h2 className="text-2xl font-bold mb-4">No Credits Available</h2>
-          <p className="text-muted-foreground mb-8">Please purchase credits to access the dashboard.</p>
+          <h2 className="text-2xl font-bold mb-4">
+            {isTrialExpired ? 'Trial Expired' : 'No Credits Available'}
+          </h2>
+          <p className="text-muted-foreground mb-8">
+            {isTrialExpired 
+              ? 'Your free trial has ended. Please purchase credits to continue using Meeting Manager.'
+              : 'Please purchase credits to access the dashboard.'
+            }
+          </p>
           <PricingPlans />
         </div>
       </div>
