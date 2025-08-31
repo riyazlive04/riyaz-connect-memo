@@ -219,8 +219,30 @@ const Dashboard = () => {
     }
   };
 
-  const handleUploadMeeting = () => {
-    toast.info("Upload feature is now connected to n8n backend. Files uploaded to Google Drive will be processed automatically.");
+  const handleUploadMeeting = async () => {
+    try {
+      // Test the webhook connection
+      const response = await fetch('https://n8n.srv930949.hstgr.cloud/webhook/0497ec7d-eead-4c47-b115-e7edd7f3b953', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          test: true,
+          timestamp: new Date().toISOString(),
+          message: 'Test connection from dashboard'
+        })
+      });
+
+      if (response.ok) {
+        toast.success("Connected to n8n webhook successfully! Upload files to Google Drive to trigger processing.");
+      } else {
+        toast.error("Failed to connect to n8n webhook. Please check the webhook URL.");
+      }
+    } catch (error) {
+      console.error('Error testing webhook:', error);
+      toast.error("Error connecting to n8n webhook. Files uploaded to Google Drive will still be processed automatically.");
+    }
   };
 
   if (loading) {
@@ -294,10 +316,10 @@ const Dashboard = () => {
               onClick={handleUploadMeeting}
             >
               <Upload className="w-4 h-4" />
-              <span>Connected to n8n</span>
+              <span>Test n8n Connection</span>
             </Button>
             <p className="text-sm text-muted-foreground">
-              Files uploaded to Google Drive are automatically processed by n8n workflow
+              Upload meeting recordings to Google Drive. n8n will automatically process them and create meetings, tasks, and team members.
             </p>
           </div>
         </CardContent>
