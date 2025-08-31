@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -30,6 +31,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MeetingUpload from "./MeetingUpload";
+import MeetingDetails from "./MeetingDetails";
 
 interface Task {
   id: string;
@@ -52,11 +54,10 @@ interface Meeting {
 }
 
 const Dashboard = () => {
-  console.log("Dashboard component rendering");
-  
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     date: "",
@@ -67,28 +68,42 @@ const Dashboard = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log("Dashboard useEffect triggered");
     // In a real application, you would fetch meetings from an API
-    // based on the selected date.
-    // For this example, we'll use dummy data.
-    // fetchMeetings(selectedDate);
   }, [selectedDate]);
 
   const handleDateSelect = (date: Date | undefined) => {
-    console.log("Date selected:", date);
     setSelectedDate(date);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // In a real application, you would submit the form data to an API
-    // and update the meetings state.
     toast({
       title: "Meeting Scheduled!",
       description: "Your meeting has been scheduled successfully.",
     });
     setIsDialogOpen(false);
+  };
+
+  const handleMeetingClick = (meeting: Meeting) => {
+    setSelectedMeeting(meeting);
+  };
+
+  const handleBackToOverview = () => {
+    setSelectedMeeting(null);
+  };
+
+  const handleTaskStatusChange = (taskId: string, status: string) => {
+    // Update task status in the selected meeting
+    if (selectedMeeting) {
+      const updatedTasks = selectedMeeting.tasks.map(task => 
+        task.id === taskId ? { ...task, status } : task
+      );
+      setSelectedMeeting({ ...selectedMeeting, tasks: updatedTasks });
+    }
+    toast({
+      title: "Task Updated",
+      description: "Task status has been updated successfully.",
+    });
   };
 
   // Dummy data for demonstration
@@ -106,24 +121,24 @@ const Dashboard = () => {
           id: 't1',
           title: 'Implement user authentication system',
           assignee: 'Nandhu',
-          status: 'In Progress',
-          priority: 'High',
+          status: 'in-progress',
+          priority: 'high',
           due_date: '2024-01-20'
         },
         {
           id: 't2',
           title: 'Design payment gateway integration',
           assignee: 'Riyaz',
-          status: 'Pending',
-          priority: 'Medium',
+          status: 'pending',
+          priority: 'medium',
           due_date: '2024-01-22'
         },
         {
           id: 't3',
           title: 'Create responsive mobile layouts',
           assignee: 'Priya',
-          status: 'Completed',
-          priority: 'High',
+          status: 'completed',
+          priority: 'high',
           due_date: '2024-01-18'
         }
       ]
@@ -141,16 +156,16 @@ const Dashboard = () => {
           id: 't4',
           title: 'Update UI color scheme based on client feedback',
           assignee: 'Sanjay',
-          status: 'In Progress',
-          priority: 'High',
+          status: 'in-progress',
+          priority: 'high',
           due_date: '2024-01-19'
         },
         {
           id: 't5',
           title: 'Revise navigation flow mockups',
           assignee: 'Haja',
-          status: 'Pending',
-          priority: 'Medium',
+          status: 'pending',
+          priority: 'medium',
           due_date: '2024-01-21'
         }
       ]
@@ -168,31 +183,78 @@ const Dashboard = () => {
           id: 't6',
           title: 'Design database schema for user management',
           assignee: 'Nandhu',
-          status: 'Completed',
-          priority: 'High',
+          status: 'completed',
+          priority: 'high',
           due_date: '2024-01-14'
         },
         {
           id: 't7',
           title: 'Setup CI/CD pipeline',
           assignee: 'Riyaz',
-          status: 'In Progress',
-          priority: 'Medium',
+          status: 'in-progress',
+          priority: 'medium',
           due_date: '2024-01-25'
         },
         {
           id: 't8',
           title: 'Create API documentation template',
           assignee: 'Priya',
-          status: 'Pending',
-          priority: 'Low',
+          status: 'pending',
+          priority: 'low',
           due_date: '2024-01-28'
         }
       ]
     }
   ];
 
-  console.log("Dashboard about to render UI");
+  // Transform tasks for MeetingDetails component
+  const transformTasksForMeetingDetails = (tasks: Task[]) => {
+    return tasks.map(task => ({
+      id: task.id,
+      meeting_id: selectedMeeting?.id || '',
+      employee_id: undefined,
+      title: task.title,
+      description: `Task assigned from meeting: ${selectedMeeting?.title}`,
+      due_date: task.due_date,
+      status: task.status,
+      priority: task.priority,
+      meeting_title: selectedMeeting?.title,
+      assignee: task.assignee,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+  };
+
+  // Transform meeting for MeetingDetails component
+  const transformMeetingForDetails = (meeting: Meeting) => {
+    return {
+      id: meeting.id,
+      title: meeting.title,
+      date: meeting.date,
+      duration: meeting.duration,
+      participants: meeting.participants,
+      transcription: undefined,
+      mom_content: meeting.mom_content,
+      status: meeting.status,
+      file_url: undefined,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+  };
+
+  // If a meeting is selected, show the details view
+  if (selectedMeeting) {
+    return (
+      <div className="container mx-auto py-10">
+        <MeetingDetails
+          meeting={transformMeetingForDetails(selectedMeeting)}
+          tasks={transformTasksForMeetingDetails(selectedMeeting.tasks)}
+          onTaskStatusChange={handleTaskStatusChange}
+          onBack={handleBackToOverview}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-10">
@@ -364,8 +426,14 @@ const Dashboard = () => {
                   </TableHeader>
                   <TableBody>
                     {dummyMeetings.map((meeting) => (
-                      <TableRow key={meeting.id}>
-                        <TableCell>{meeting.title}</TableCell>
+                      <TableRow 
+                        key={meeting.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleMeetingClick(meeting)}
+                      >
+                        <TableCell className="font-medium hover:text-primary transition-colors">
+                          {meeting.title}
+                        </TableCell>
                         <TableCell>{meeting.date}</TableCell>
                         <TableCell>{meeting.duration}</TableCell>
                         <TableCell>{meeting.participants}</TableCell>
