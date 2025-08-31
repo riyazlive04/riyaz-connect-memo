@@ -1,12 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Users, Clock, CheckCircle2, ArrowLeft } from "lucide-react";
+import { BarChart3, Users, Clock, CheckCircle2, ArrowLeft, Upload } from "lucide-react";
 import MeetingCard from "./MeetingCard";
 import TaskCard from "./TaskCard";
 import TeamManagement from "./TeamManagement";
 import MeetingDetails from "./MeetingDetails";
+import MeetingUpload from "./MeetingUpload";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -283,6 +285,7 @@ const taskService = {
 
 const Dashboard = () => {
   const [selectedMeeting, setSelectedMeeting] = useState<string | null>(null);
+  const [showUpload, setShowUpload] = useState(false);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -423,6 +426,26 @@ const Dashboard = () => {
     );
   }
 
+  // If upload view is selected, show meeting upload
+  if (showUpload) {
+    return (
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        <div className="flex items-center space-x-4">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowUpload(false)}
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+          </Button>
+        </div>
+        
+        <MeetingUpload />
+      </div>
+    );
+  }
+
   // If a meeting is selected, show meeting details
   if (selectedMeeting) {
     const meeting = meetings.find(m => m.id === selectedMeeting);
@@ -480,6 +503,18 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Upload Meeting Button */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Dashboard Overview</h1>
+        <Button 
+          onClick={() => setShowUpload(true)}
+          className="flex items-center gap-2"
+        >
+          <Upload className="w-4 h-4" />
+          Upload Meeting Audio
+        </Button>
+      </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
