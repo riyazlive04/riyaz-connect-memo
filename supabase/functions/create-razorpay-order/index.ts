@@ -44,10 +44,15 @@ serve(async (req) => {
       throw new Error('Razorpay credentials not configured');
     }
 
+    // Generate a shorter receipt that stays within 40 characters
+    const timestamp = Date.now().toString().slice(-8); // Last 8 digits
+    const userIdShort = user?.id?.slice(-8) || sessionToken?.slice(-8) || 'anon';
+    const receipt = `ord_${userIdShort}_${timestamp}`.slice(0, 40);
+
     const orderData = {
       amount: amount, // amount in paise
       currency: 'INR',
-      receipt: `order_${sessionToken || user?.id}_${Date.now()}`,
+      receipt: receipt,
       notes: {
         user_id: user?.id || 'unauthenticated',
         credits: credits.toString(),
