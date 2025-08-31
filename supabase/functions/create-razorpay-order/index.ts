@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createHmac } from "https://deno.land/std@0.190.0/crypto/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,46 +19,34 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    const { 
-      amount, 
-      credits, 
-      planName, 
-      sessionToken, 
-      authenticated 
-    } = await req.json();
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization')!;
+    const token = authHeader.replace('Bearer ', '');
+    const { data } = await supabase.auth.getUser(token);
+    const user = data.user;
 
-    let user = null;
-    
-    // Get authenticated user if available
-    if (authenticated) {
-      const authHeader = req.headers.get('Authorization')!;
-      const token = authHeader.replace('Bearer ', '');
-      const { data } = await supabase.auth.getUser(token);
-      user = data.user;
+    if (!user) {
+      throw new Error('User not authenticated');
     }
 
+    const { amount, credits, planName } = await req.json();
+
     // Create Razorpay order
-    const razorpayKeyId = "rzp_live_RBqfXCUe7jc7go";
-    const razorpayKeySecret = "eZkG2VMQnv1clQObOrgoL8PX";
+    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
+    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
 
     if (!razorpayKeyId || !razorpayKeySecret) {
       throw new Error('Razorpay credentials not configured');
     }
 
-    // Generate a shorter receipt that stays within 40 characters
-    const timestamp = Date.now().toString().slice(-8); // Last 8 digits
-    const userIdShort = user?.id?.slice(-8) || sessionToken?.slice(-8) || 'anon';
-    const receipt = `ord_${userIdShort}_${timestamp}`.slice(0, 40);
-
     const orderData = {
       amount: amount, // amount in paise
       currency: 'INR',
-      receipt: receipt,
+      receipt: `order_${user.id}_${Date.now()}`,
       notes: {
-        user_id: user?.id || 'unauthenticated',
+        user_id: user.id,
         credits: credits.toString(),
-        plan_name: planName,
-        session_token: sessionToken || ''
+        plan_name: planName
       }
     };
 
@@ -80,20 +69,19 @@ serve(async (req) => {
 
     const order = await response.json();
 
-    // Store order in database with service role client
+    // Store order in database
     const supabaseService = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     await supabaseService.from('payment_orders').insert({
-      user_id: user?.id || null,
+      user_id: user.id,
       razorpay_order_id: order.id,
       amount: amount,
       credits: credits,
       plan_name: planName,
-      status: 'created',
-      session_token: sessionToken || null
+      status: 'created'
     });
 
     return new Response(JSON.stringify({
