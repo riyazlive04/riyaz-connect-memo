@@ -51,7 +51,6 @@ export type Database = {
           meeting_id: string
           mom: Json | null
           title: string
-          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -59,7 +58,6 @@ export type Database = {
           meeting_id?: string
           mom?: Json | null
           title: string
-          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -67,7 +65,6 @@ export type Database = {
           meeting_id?: string
           mom?: Json | null
           title?: string
-          user_id?: string | null
         }
         Relationships: []
       }
